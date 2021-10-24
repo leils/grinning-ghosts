@@ -40,6 +40,9 @@ function gotData() {
 
 let vid, thunder;
 let vidHeight;
+let bl_frame, br_frame, tl_frame, tr_frame;
+
+let frame_size = 0;
 
 const alphaChange = 3;
 let coords = [];
@@ -53,6 +56,7 @@ let ghostShowState = [false, false, false, false, false];
 // alphas on the ghost covers
 // 100 = obscured, 0 = transparent
 let showAlpha = [100, 100, 100, 100, 100];
+let inEndState = false;
 
 // ---------Setup for text
 let myFont;
@@ -81,12 +85,14 @@ let introTextAlpha = 255;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   calculateCoords();
+  calcFrameSize();
+
   vid.pause();
 
   serial = new p5.SerialPort();
 
   serial.list();
-  serial.open("/dev/tty.usbmodem143201");
+  serial.open("/dev/tty.usbmodem141201");
   serial.on("connected", serverConnected);
   serial.on("list", gotList);
   serial.on("data", gotData);
@@ -102,6 +108,11 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   calculateCoords();
   textSetup();
+  calcFrameSize();
+}
+
+function calcFrameSize() {
+  frame_size = windowWidth / 9;
 }
 
 function calculateCoords() {
@@ -147,6 +158,11 @@ function preload() {
   vid.hide();
 
   thunder = createAudio("thunder.mp3");
+
+  br_frame = loadImage("br-corner.png");
+  tr_frame = loadImage("tr-corner.png");
+  bl_frame = loadImage("bl-corner.png");
+  tl_frame = loadImage("tl-corner.png");
 
   myFont = loadFont('AmaticSC-Bold.ttf');
 }
@@ -205,8 +221,11 @@ function handleNumVisibleGhosts() {
 
   introTextAlpha = (1 - (numVisible / 5)) * 255;
   if (numVisible > 4) {
+    inEndState = true;
     lightningTransparency = 100;
     thunder.play();
+  } else {
+    inEndState = false;
   }
 }
 
@@ -264,6 +283,17 @@ function draw() {
   handleCovers();
   lightning();
   showText();
+
+  if (inEndState) {
+    showFrame();
+  }
+}
+
+function showFrame() {
+  image(br_frame, windowWidth - frame_size, windowHeight - frame_size, frame_size, frame_size);
+  image(bl_frame, 0, windowHeight - frame_size, frame_size, frame_size);
+  image(tl_frame, 0, 0, frame_size, frame_size);
+  image(tr_frame, windowWidth - frame_size, 0, frame_size, frame_size);
 }
 
 function handleGhosts() {
