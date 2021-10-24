@@ -38,16 +38,16 @@ function gotData() {
 //---------------
 //-----------Ghost Rendering
 
-const alphaChange = 3;
 let vid, thunder;
-const numGhosts = 5;
-let coords = [];
-let volume = 1;
-let lightningTransparency = 0;
 let vidHeight;
-let myFont;
-let tSize = 84;
 
+const alphaChange = 3;
+let coords = [];
+let lightningTransparency = 0;
+
+//Ghost variables
+const numGhosts = 5;
+let volume = 1;
 // whether the ghost should be shown or not
 let ghostShowState = [false, false, false, false, false];
 // alphas on the ghost covers
@@ -55,6 +55,9 @@ let ghostShowState = [false, false, false, false, false];
 let showAlpha = [100, 100, 100, 100, 100];
 
 // ---------Setup for text
+let myFont;
+let tSize = 84;
+
 let xspacing = 35; // Distance between each horizontal location
 let w; // Width of entire wave
 let theta = 0.0; // Start angle at 0
@@ -64,6 +67,8 @@ let dx; // Value for incrementing x
 let yvalues; // Using an array to store height values for the wave
 let introXOffset;
 let outroXOffset;
+const outroIndent = 300;
+const introIndent = 525;
 
 let sentence = "place candles to call the ghosts";
 let outro = "happy hauntings"
@@ -71,53 +76,46 @@ let sentenceArray = [];
 let outroArray = [];
 let introTextAlpha = 255;
 
-//Ghost setup
-
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  calculateCoords();
-
-  serial = new p5.SerialPort();
-
-  serial.list();
-  serial.open("/dev/tty.usbmodem143201");
-
-  serial.on("connected", serverConnected);
-
-  serial.on("list", gotList);
-
-  serial.on("data", gotData);
-
-  serial.on("error", gotError);
-
-  serial.on("open", gotOpen);
-
-  serial.on("close", gotClose);
-
-  vid.pause();
-
+function textSetup() {
   yOffset = windowHeight - 200;
   w = windowWidth - 20;
   dx = (TWO_PI / period) * xspacing;
   yvalues = new Array(floor(w / xspacing));
   introArray = sentence.split("");
   outroArray = outro.split("");
-  outroXOffset = windowWidth / 2 - 300;
-  introXOffset = windowWidth / 2 - 525;
+  outroXOffset = windowWidth / 2 - outroIndent;
+  introXOffset = windowWidth / 2 - introIndent;
+}
 
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  calculateCoords();
+  vid.pause();
+
+  serial = new p5.SerialPort();
+
+  serial.list();
+  serial.open("/dev/tty.usbmodem143201");
+  serial.on("connected", serverConnected);
+  serial.on("list", gotList);
+  serial.on("data", gotData);
+  serial.on("error", gotError);
+  serial.on("open", gotOpen);
+  serial.on("close", gotClose);
+
+  textSetup();
   handleNumVisibleGhosts();
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   calculateCoords();
+  textSetup();
 }
 
 function preload() {
-  vid = createVideo("Busts-2.m4v");
-  // vid = createVideo("singing-busts.mp4");
-  // vid = createVideo('https://firebasestorage.googleapis.com/v0/b/sketch-blog-857c6.appspot.com/o/busts.mp4?alt=media&token=11c8e6b1-8c3a-427a-8a6c-59ac09164a38');
+  // vid = createVideo("Busts-2.m4v");
+  vid = createVideo("singing-busts.mp4");
   vid.loop();
   vid.hide();
 
@@ -188,25 +186,15 @@ function handleNumVisibleGhosts() {
 }
 
 function showText() {
+  textFont(myFont);
+  calcWave();
   let numVisible = ghostShowState.filter(Boolean).length;
-  if (numVisible < 5) {
-    showInstructions();
-  } else if (numVisible == 5) {
-    showOutro();
+  if (numVisible < 5) { //render instructions
+    renderWave(introArray, introTextAlpha, introXOffset);
+  } else if (numVisible == 5) { //render outdro
+    renderWave(outroArray, 255, outroXOffset);
   }
 
-}
-
-function showInstructions() {
-  textFont(myFont);
-  calcWave();
-  renderWave(introArray, introTextAlpha, introXOffset);
-}
-
-function showOutro() {
-  textFont(myFont);
-  calcWave();
-  renderWave(outroArray, 255, outroXOffset);
 }
 
 function calcWave() {
@@ -223,7 +211,6 @@ function calcWave() {
 }
 
 function renderWave(arr, a, xoffset) {
-  // textFont(myFont);
   let c = color(59,	201, 220, a);
   fill(c);
   textSize(tSize);
