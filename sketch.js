@@ -56,9 +56,9 @@ let showAlpha = [100, 100, 100, 100, 100];
 
 // ---------Setup for text
 let myFont;
-let tSize = 84;
+let tSize = 200;
 
-let xspacing = 35; // Distance between each horizontal location
+let xspacing = 85; // Distance between each horizontal location
 let w; // Width of entire wave
 let theta = 0.0; // Start angle at 0
 let amplitude = 20.0; // Height of wave
@@ -67,26 +67,17 @@ let dx; // Value for incrementing x
 let yvalues; // Using an array to store height values for the wave
 let introXOffset;
 let outroXOffset;
-const outroIndent = 300;
-const introIndent = 525;
+let outroIndent = 300;
+let introIndent = 800;
 
-let sentence = "place candles to call the ghosts";
-let outro = "happy hauntings"
+let sentence = "candles summon our spooky serenade";
+let outro = "happy hauntings!"
 let sentenceArray = [];
 let outroArray = [];
 let introTextAlpha = 255;
 
-function textSetup() {
-  yOffset = windowHeight - 200;
-  w = windowWidth - 20;
-  dx = (TWO_PI / period) * xspacing;
-  yvalues = new Array(floor(w / xspacing));
-  introArray = sentence.split("");
-  outroArray = outro.split("");
-  outroXOffset = windowWidth / 2 - outroIndent;
-  introXOffset = windowWidth / 2 - introIndent;
-}
 
+// ----------Setup and callbacks
 function setup() {
   createCanvas(windowWidth, windowHeight);
   calculateCoords();
@@ -113,6 +104,42 @@ function windowResized() {
   textSetup();
 }
 
+function calculateCoords() {
+  coords = [];
+  let widthSteps = windowWidth / numGhosts;
+  let heightStep = (windowWidth * (9 / 16)) / 4;
+  let coverHeight = heightStep * 2;
+  for (let i = 0; i < numGhosts; i++) {
+    let x = widthSteps * i;
+    let y = heightStep;
+    let width = widthSteps;
+    let height = coverHeight;
+
+    coords.push({
+      x: x,
+      y: y,
+      w: width,
+      h: height,
+    });
+  }
+}
+
+function textSetup() {
+  tSize = windowWidth / 15;
+  xspacing = tSize * .4;
+  outroIndent =  windowWidth * .32;
+  introIndent = windowWidth/2 - (tSize * .7);
+  yOffset = windowHeight - 200;
+  w = windowWidth - 20;
+  dx = (TWO_PI / period) * xspacing;
+  yvalues = new Array(floor(w / xspacing));
+  introArray = sentence.split("");
+  outroArray = outro.split("");
+  outroXOffset = windowWidth / 2 - outroIndent;
+  introXOffset = windowWidth / 2 - introIndent;
+}
+
+
 function preload() {
   // vid = createVideo("Busts-2.m4v");
   vid = createVideo("singing-busts.mp4");
@@ -124,6 +151,7 @@ function preload() {
   myFont = loadFont('AmaticSC-Bold.ttf');
 }
 
+//Key presses mainly used for testing/control/reset.
 function keyPressed() {
   let i;
 
@@ -147,9 +175,6 @@ function keyPressed() {
       break;
     case 53: //5
       i = 4;
-      break;
-    case 32: //spacebar
-      thunder.play();
       break;
     case UP_ARROW:
       vid.loop();
@@ -190,9 +215,11 @@ function showText() {
   calcWave();
   let numVisible = ghostShowState.filter(Boolean).length;
   if (numVisible < 5) { //render instructions
-    renderWave(introArray, introTextAlpha, introXOffset);
+    textSize(tSize);
+    renderWave(introArray, introTextAlpha, introXOffset, xspacing);
   } else if (numVisible == 5) { //render outdro
-    renderWave(outroArray, 255, outroXOffset);
+    textSize(tSize * 1.5);
+    renderWave(outroArray, 255, outroXOffset, xspacing*1.5);
   }
 
 }
@@ -210,15 +237,14 @@ function calcWave() {
   }
 }
 
-function renderWave(arr, a, xoffset) {
+function renderWave(arr, a, xoffset, spread) {
   let c = color(59,	201, 220, a);
   fill(c);
-  textSize(tSize);
 
     // A simple way to draw the wave with an ellipse at each location
   for (let x = 0; x < arr.length; x++) {
     // ellipse(x * xspacing, height / 2 + yvalues[x], 16, 16);
-        text(arr[x], xoffset + x * xspacing, yOffset + yvalues[x]);
+        text(arr[x], xoffset + x * spread, yOffset + yvalues[x]);
   }
 }
 
@@ -236,7 +262,7 @@ function draw() {
 
   handleGhosts();
   handleCovers();
-  handleLightning();
+  lightning();
   showText();
 }
 
@@ -264,25 +290,6 @@ function handleShowState(num) {
   showAlpha[num] = Math.min(255, Math.max(0, currentAlpha)); //clamp to 0-255
 }
 
-function calculateCoords() {
-  coords = [];
-  let widthSteps = windowWidth / numGhosts;
-  let heightStep = (windowWidth * (9 / 16)) / 4;
-  let coverHeight = heightStep * 2;
-  for (let i = 0; i < numGhosts; i++) {
-    let x = widthSteps * i;
-    let y = heightStep;
-    let width = widthSteps;
-    let height = coverHeight;
-
-    coords.push({
-      x: x,
-      y: y,
-      w: width,
-      h: height,
-    });
-  }
-}
 
 function handleCovers() {
   for (let i = 0; i < numGhosts; i++) {
@@ -294,7 +301,7 @@ function handleCovers() {
   }
 }
 
-function handleLightning() {
+function lightning() {
   if (lightningTransparency > 0) {
     c = color(255, 255, 255, lightningTransparency);
     fill(c);
