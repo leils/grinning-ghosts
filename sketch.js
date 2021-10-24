@@ -56,7 +56,6 @@ let ghostShowState = [false, false, false, false, false];
 // alphas on the ghost covers
 // 100 = obscured, 0 = transparent
 let showAlpha = [100, 100, 100, 100, 100];
-let inEndState = false;
 
 // ---------Setup for text
 let myFont;
@@ -101,6 +100,8 @@ function setup() {
   serial.on("close", gotClose);
 
   textSetup();
+  textFont(myFont);
+
   handleNumVisibleGhosts();
 }
 
@@ -215,32 +216,15 @@ function keyPressed() {
   handleNumVisibleGhosts();
 }
 
+// Use for things that only change ONCE after num visible ghosts changes
 function handleNumVisibleGhosts() {
-  let numVisible = ghostShowState.filter(Boolean).length;
-  handleVolume(numVisible);
+  setVolume(numVisibleGhosts());
 
-  introTextAlpha = (1 - (numVisible / 5)) * 255;
-  if (numVisible > 4) {
-    inEndState = true;
+  introTextAlpha = (1 - (numVisibleGhosts() / 5)) * 255;
+  if (numVisibleGhosts() > 4) {
     lightningTransparency = 100;
     thunder.play();
-  } else {
-    inEndState = false;
   }
-}
-
-function showText() {
-  textFont(myFont);
-  calcWave();
-  let numVisible = ghostShowState.filter(Boolean).length;
-  if (numVisible < 5) { //render instructions
-    textSize(tSize);
-    renderWave(introArray, introTextAlpha, introXOffset, xspacing);
-  } else if (numVisible == 5) { //render outdro
-    textSize(tSize * 1.5);
-    renderWave(outroArray, 255, outroXOffset, xspacing*1.5);
-  }
-
 }
 
 function calcWave() {
@@ -267,11 +251,14 @@ function renderWave(arr, a, xoffset, spread) {
   }
 }
 
-
-function handleVolume(n) {
+function setVolume(n) {
   let newVol = n / 5;
   volume = Math.max(newVol, 0.1);
   vid.volume(volume);
+}
+
+function numVisibleGhosts() {
+  return ghostShowState.filter(Boolean).length;
 }
 
 function draw() {
@@ -279,32 +266,37 @@ function draw() {
   vidHeight = windowWidth * (9 / 16);
   image(vid, 0, 0, windowWidth, vidHeight);
 
-  handleGhosts();
-  handleCovers();
-  lightning();
-  showText();
-
-  if (inEndState) {
-    showFrame();
+  // Calculations and setup
+  for (i = 0; i < numGhosts; i++) {
+    handleCoverAlpha(i);
   }
+  calcWave();
+
+  // Start render
+  renderCovers();
+
+  // Render states
+  if (numVisibleGhosts() < 5) {
+    textSize(tSize);
+    renderWave(introArray, introTextAlpha, introXOffset, xspacing);
+  } else {
+    renderFrame();
+    lightning();
+    textSize(tSize * 1.5);
+    renderWave(outroArray, 255, outroXOffset, xspacing*1.5);
+  }
+
 }
 
-function showFrame() {
+function renderFrame() {
   image(br_frame, windowWidth - frame_size, windowHeight - frame_size, frame_size, frame_size);
   image(bl_frame, 0, windowHeight - frame_size, frame_size, frame_size);
   image(tl_frame, 0, 0, frame_size, frame_size);
   image(tr_frame, windowWidth - frame_size, 0, frame_size, frame_size);
 }
 
-function handleGhosts() {
-  // for each of the ghosts:
-  // handle show state
-  for (i = 0; i < numGhosts; i++) {
-    handleShowState(i);
-  }
-}
-
-function handleShowState(num) {
+// Fades covers from state to state
+function handleCoverAlpha(num) {
   currentAlpha = showAlpha[num];
 
   if (ghostShowState[num]) {
@@ -320,8 +312,7 @@ function handleShowState(num) {
   showAlpha[num] = Math.min(255, Math.max(0, currentAlpha)); //clamp to 0-255
 }
 
-
-function handleCovers() {
+function renderCovers() {
   for (let i = 0; i < numGhosts; i++) {
     coverColor = color(0, 0, 0, showAlpha[i]);
     fill(coverColor);
